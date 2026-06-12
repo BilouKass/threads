@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Threads Manager — Utilisateurs</title>
+    <style>
+      :root { --bg:#0b0d12; --card:#161a23; --card2:#0e1219; --line:#252b38; --fg:#e6e9ef; --mut:#8b95a7; --accent:#5b8cff; --ok:#3fb37f; --warn:#d7b15b; --err:#e0566f; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--fg); }
+      a { color:var(--accent); text-decoration:none; }
+      header { padding:14px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+      header h1 { font-size:17px; margin:0; }
+      nav a { font-size:13px; color:var(--mut); margin-right:14px; }
+      nav a.active { color:var(--fg); }
+      #userChip { margin-left:auto; display:flex; gap:8px; align-items:center; }
+      main { max-width:1000px; margin:0 auto; padding:24px; display:grid; gap:20px; }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+      .card h2 { margin:0 0 12px; font-size:15px; }
+      label { display:block; font-size:12px; color:var(--mut); margin:8px 0 4px; }
+      input, select { padding:9px 11px; background:var(--card2); border:1px solid var(--line); border-radius:8px; color:var(--fg); font:inherit; }
+      button { cursor:pointer; padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:#1d2330; color:var(--fg); font:inherit; }
+      button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+      button.danger { color:var(--err); border-color:#5b2330; }
+      button.sm { padding:4px 9px; font-size:12px; }
+      .row { display:flex; gap:10px; align-items:end; flex-wrap:wrap; }
+      table { width:100%; border-collapse:collapse; font-size:13px; }
+      th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); vertical-align:top; }
+      th { color:var(--mut); font-weight:500; }
+      .pill { font-size:11px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); }
+      .ok{color:var(--ok)} .mut{color:var(--mut)} .warn{color:var(--warn)}
+      .assign { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:4px; margin-top:6px; }
+      .assign label { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--fg); margin:0; }
+      .empty { color:var(--mut); padding:20px; text-align:center; }
+      .toast { position:fixed; bottom:20px; right:20px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 16px; }
+    </style>
+  </head>
+  <body data-require-admin>
+    <header>
+      <h1>👥 Utilisateurs</h1>
+      <nav>
+        <a href="/">Opérations</a>
+        <a href="/admin.html">Administration</a>
+        <a href="/analytics.html">Analytics</a>
+        <a href="/keys.html" data-admin>Clés API</a>
+        <a href="/users.html" class="active" data-admin>Utilisateurs</a>
+      </nav>
+      <div id="userChip"></div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Créer un utilisateur</h2>
+        <div class="row">
+          <div><label>Identifiant</label><input id="nu" placeholder="ex: marie" /></div>
+          <div><label>Mot de passe</label><input id="np" type="text" placeholder="min. 6 caractères" /></div>
+          <div>
+            <label>Rôle</label>
+            <select id="nr">
+              <option value="VA">VA (gère des comptes assignés)</option>
+              <option value="ADMIN">Admin (accès total)</option>
+            </select>
+          </div>
+          <div><button class="primary" onclick="createUser()">+ Créer</button></div>
+        </div>
+        <p class="mut" style="font-size:12px;margin-top:8px">Un VA ne voit que les comptes que tu lui assignes, et n'a pas accès aux clés API ni aux utilisateurs.</p>
+      </section>
+
+      <section class="card">
+        <h2>Utilisateurs <button class="sm" style="float:right" onclick="load()">↻</button></h2>
+        <table id="usersTable">
+          <thead><tr><th>Identifiant</th><th>Rôle</th><th>État</th><th>Comptes assignés (VA)</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="/session.js"></script>
+    <script src="/users.js"></script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(DATABASE_URL=\"postgresql://x:x@localhost:5432/x\" npx prisma validate)"
+    ]
+  }
+}

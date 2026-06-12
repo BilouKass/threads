@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Threads Manager — Analytics</title>
+    <style>
+      :root { --bg:#0b0d12; --card:#161a23; --card2:#0e1219; --line:#252b38; --fg:#e6e9ef; --mut:#8b95a7; --accent:#5b8cff; --ok:#3fb37f; --warn:#d7b15b; --err:#e0566f; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--fg); }
+      a { color:var(--accent); text-decoration:none; }
+      header { padding:14px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+      header h1 { font-size:17px; margin:0; }
+      nav a { font-size:13px; color:var(--mut); margin-right:14px; }
+      nav a.active { color:var(--fg); }
+      .api-key-bar { margin-left:auto; display:flex; gap:8px; align-items:center; }
+      .api-key-bar input { width:240px; padding:8px 10px; background:var(--card2); border:1px solid var(--line); border-radius:8px; color:var(--fg); }
+      main { max-width:1100px; margin:0 auto; padding:22px; }
+      button { cursor:pointer; padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:#1d2330; color:var(--fg); font:inherit; }
+      button.sm { padding:4px 9px; font-size:12px; }
+      button.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+      select { padding:8px 10px; background:var(--card2); border:1px solid var(--line); border-radius:8px; color:var(--fg); }
+      .bar { display:flex; gap:12px; align-items:center; margin-bottom:18px; flex-wrap:wrap; }
+      .period { margin-left:auto; display:flex; gap:6px; }
+      .tiles { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:18px; }
+      @media(max-width:760px){ .tiles{ grid-template-columns:repeat(2,1fr);} }
+      .tile { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+      .tile .v { font-size:22px; font-weight:600; }
+      .tile .l { font-size:12px; color:var(--mut); margin-top:2px; }
+      .tile .d { font-size:12px; margin-top:4px; }
+      .up { color:var(--ok); } .down { color:var(--err); }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; margin-bottom:18px; }
+      .card h2 { margin:0 0 14px; font-size:14px; color:var(--mut); text-transform:uppercase; letter-spacing:.04em; }
+      table { width:100%; border-collapse:collapse; font-size:13px; }
+      th,td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); }
+      th { color:var(--mut); font-weight:500; }
+      .empty { color:var(--mut); padding:40px; text-align:center; }
+      svg { width:100%; display:block; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🧵 Analytics</h1>
+      <nav>
+        <a href="/">Opérations</a>
+        <a href="/admin.html">Administration</a>
+        <a href="/analytics.html" class="active">Analytics</a>
+        <a href="/keys.html" data-admin>Clés API</a>
+        <a href="/users.html" data-admin>Utilisateurs</a>
+      </nav>
+      <div class="api-key-bar" id="userChip"></div>
+    </header>
+
+    <main>
+      <div class="bar">
+        <select id="account"></select>
+        <button class="sm" onclick="capture()">⟳ Capturer maintenant</button>
+        <div class="period">
+          <button class="sm" data-d="7" onclick="setPeriod(7)">7j</button>
+          <button class="sm active" data-d="30" onclick="setPeriod(30)">30j</button>
+          <button class="sm" data-d="90" onclick="setPeriod(90)">90j</button>
+        </div>
+      </div>
+
+      <div class="tiles" id="tiles"></div>
+
+      <div class="card">
+        <h2>Croissance des abonnés</h2>
+        <div id="followersChart"><div class="empty">Pas encore de données. Clique « Capturer maintenant » ou attends la capture quotidienne.</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Vues par jour</h2>
+        <div id="viewsChart"><div class="empty">—</div></div>
+      </div>
+
+      <div class="card">
+        <h2>Meilleurs posts (par vues)</h2>
+        <table id="postsTable"><thead><tr><th>Date</th><th>Vues</th><th>J'aime</th><th>Réponses</th><th>Reposts</th><th>Lien</th></tr></thead><tbody></tbody></table>
+      </div>
+    </main>
+
+    <script src="/session.js"></script>
+    <script src="/analytics.js"></script>
+  </body>
+</html>

@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A connected Threads account (one Meta/Threads user).
+model Account {
+  id            String    @id @default(cuid())
+  threadsUserId String    @unique
+  username      String?
+  name          String?
+  /// AES-256-GCM encrypted long-lived access token (never stored in plaintext).
+  accessToken   String
+  tokenType     String    @default("long_lived")
+  scope         String?
+  /// When the current access token expires (long-lived ~ 60 days).
+  expiresAt     DateTime?
+  lastRefreshAt DateTime?
+  disabled      Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  scheduledPosts ScheduledPost[]
+  actions        Action[]
+  queueSlots     QueueSlot[]
+  snapshots      MetricSnapshot[]
+  postInsights   PostInsight[]
+  userAccounts   UserAccount[]
+
+  @@map("accounts")
+}
+
+enum Role {
+  ADMIN
+  VA
+}
+
+/// A human user of the web UI (admin or virtual assistant).
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  /// scrypt hash, stored as "salt:hash" (hex).
+  passwordHash String
+  role         Role     @default(VA)
+  disabled     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sessions Session[]
+  accounts UserAccount[]
+
+  @@map("users")
+}
+
+/// A login session. The cookie holds a random token; we store its SHA-256 as id.
+model Session {
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// Assignment of a Threads account to a VA user (account-level scoping).
+model UserAccount {
+  userId    String
+  accountId String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, accountId])
+  @@index([accountId])
+  @@map("user_accounts")
+}
+
+enum JobStatus {
+  PENDING
+  PROCESSING
+  PUBLISHED
+  FAILED
+  CANCELLED
+}
+
+enum PostMediaType {
+  TEXT
+  IMAGE
+  VIDEO
+  CAROUSEL
+}
+
+/// A post to be published (optionally a reply / part of a chain), now or later.
+model ScheduledPost {
+  id          String        @id @default(cuid())
+  accountId   String
+  account     Account       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  text        String?
+  mediaType   PostMediaType @default(TEXT)
+  /// Ordered media items: JSON array of { type: "IMAGE" | "VIDEO", url }.
+  /// Mixing images and videos forms a mixed carousel.
+  media       Json?
+  /// If set, this post is published as a reply to the given Threads media id.
+  replyToId   String?
+  /// Optional link attachment (text posts only).
+  linkAttachment String?
+
+  /// Poll attachment (TEXT posts only): { optionA, optionB, optionC?, optionD? }.
+  poll        Json?
+  /// Text spoiler ranges: JSON array of { offset, length } (max 10).
+  spoilers    Json?
+  /// Blur the media (IMAGE/VIDEO/CAROUSEL) as a spoiler.
+  isSpoilerMedia Boolean @default(false)
+
+  /// Chain support (enchaînements): posts sharing a chainId publish in order,
+  /// each as a reply to the previously published post in the chain.
+  chainId        String?
+  chainOrder     Int?
+  /// This post only becomes eligible once dependsOnPostId has PUBLISHED; its
+  /// replyToId is then set to that post's published media id.
+  dependsOnPostId String?
+
+  scheduledAt DateTime
+  status      JobStatus     @default(PENDING)
+  attempts    Int           @default(0)
+  maxAttempts Int           @default(3)
+  lastError   String?
+  /// Threads media id returned after a successful publish.
+  publishedId String?
+
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([status, scheduledAt])
+  @@index([chainId])
+  @@map("scheduled_posts")
+}
+
+enum ActionType {
+  REPLY
+}
+
+/// A discrete action against an existing Threads element (currently: replies).
+model Action {
+  id          String     @id @default(cuid())
+  accountId   String
+  account     Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  type        ActionType @default(REPLY)
+  /// Threads media id the action targets (the post/comment to reply to).
+  targetId    String
+  /// Reply text (REPLY only).
+  text        String?
+
+  scheduledAt DateTime   @default(now())
+  status      JobStatus  @default(PENDING)
+  attempts    Int        @default(0)
+  maxAttempts Int        @default(3)
+  lastError   String?
+  /// Resulting Threads media id (for REPLY) if any.
+  resultId    String?
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([status, scheduledAt])
+  @@map("actions")
+}
+
+/// API keys for programmatic access (n8n, scripts). Only the hash is stored.
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  /// SHA-256 hash of the raw key.
+  hash       String    @unique
+  /// First chars of the key, shown for identification.
+  prefix     String
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@map("api_keys")
+}
+
+/// Short-lived CSRF state for the OAuth authorize flow.
+model OAuthState {
+  state     String   @id
+  /// The user who initiated the flow (to auto-assign the new account).
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@map("oauth_states")
+}
+
+/// Recurring posting time slot for an account's queue (file d'attente).
+/// dayOfWeek: 0=Sunday … 6=Saturday. Local-time hour/minute.
+model QueueSlot {
+  id        String  @id @default(cuid())
+  accountId String
+  account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  dayOfWeek Int
+  hour      Int
+  minute    Int     @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([accountId])
+  @@map("queue_slots")
+}
+
+/// Daily account-level metrics snapshot (for growth/trend analytics).
+model MetricSnapshot {
+  id        String   @id @default(cuid())
+  accountId String
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  /// Date (midnight) the snapshot represents.
+  day       DateTime
+  followers Int?
+  views     Int?
+  likes     Int?
+  replies   Int?
+  reposts   Int?
+  quotes    Int?
+
+  capturedAt DateTime @default(now())
+
+  @@unique([accountId, day])
+  @@index([accountId, day])
+  @@map("metric_snapshots")
+}
+
+/// Latest insights for a published post (per-post analytics).
+model PostInsight {
+  id              String   @id @default(cuid())
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  /// Published Threads media id.
+  mediaId         String   @unique
+  /// Link back to the originating scheduled post, when known.
+  scheduledPostId String?
+
+  views    Int?
+  likes    Int?
+  replies  Int?
+  reposts  Int?
+  quotes   Int?
+  shares   Int?
+
+  permalink String?
+  postedAt  DateTime?
+  capturedAt DateTime @default(now())
+
+  @@index([accountId])
+  @@map("post_insights")
+}

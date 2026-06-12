@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Threads Manager — Administration</title>
+    <style>
+      :root { --bg:#0b0d12; --card:#161a23; --card2:#0e1219; --line:#252b38; --fg:#e6e9ef; --mut:#8b95a7; --accent:#5b8cff; --ok:#3fb37f; --warn:#d7b15b; --err:#e0566f; }
+      * { box-sizing: border-box; }
+      body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+      a { color:var(--accent); text-decoration:none; }
+      header { padding:14px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+      header h1 { font-size:17px; margin:0; }
+      nav a { font-size:13px; color:var(--mut); margin-right:14px; }
+      nav a.active { color:var(--fg); }
+      .api-key-bar { margin-left:auto; display:flex; gap:8px; align-items:center; }
+      .api-key-bar input { width:240px; padding:8px 10px; background:var(--card2); border:1px solid var(--line); border-radius:8px; color:var(--fg); }
+      main { max-width:1200px; margin:0 auto; padding:22px; }
+      button { cursor:pointer; padding:8px 12px; border-radius:8px; border:1px solid var(--line); background:#1d2330; color:var(--fg); font:inherit; }
+      button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+      button.sm { padding:4px 9px; font-size:12px; }
+      button:hover { filter:brightness(1.1); }
+
+      .overview { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:22px; }
+      .ov-tile { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+      .ov-tile .v { font-size:24px; font-weight:600; }
+      .ov-tile .l { font-size:12px; color:var(--mut); margin-top:2px; }
+
+      .layout { display:grid; grid-template-columns:320px 1fr; gap:18px; align-items:start; }
+      @media (max-width:900px){ .layout{ grid-template-columns:1fr; } .overview{ grid-template-columns:repeat(2,1fr); } }
+
+      .acct-list { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+      .acct { display:flex; gap:10px; align-items:center; padding:11px 13px; border-bottom:1px solid var(--line); cursor:pointer; }
+      .acct:last-child { border-bottom:none; }
+      .acct:hover { background:#1b212c; }
+      .acct.active { background:#1d2533; box-shadow: inset 3px 0 0 var(--accent); }
+      .avatar { width:38px; height:38px; border-radius:50%; background:#2a3140; display:flex; align-items:center; justify-content:center; font-weight:600; color:var(--mut); overflow:hidden; flex:0 0 auto; }
+      .avatar img { width:100%; height:100%; object-fit:cover; }
+      .acct .meta { min-width:0; flex:1; }
+      .acct .u { font-weight:600; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .acct .sub { font-size:12px; color:var(--mut); }
+
+      .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px; min-height:300px; }
+      .panel-head { display:flex; gap:14px; align-items:center; margin-bottom:18px; }
+      .panel-head .avatar { width:56px; height:56px; }
+      .panel-head h2 { margin:0; font-size:18px; }
+      .panel-head .bio { font-size:13px; color:var(--mut); margin-top:3px; max-width:520px; }
+      .period { margin-left:auto; display:flex; gap:6px; }
+      .period button.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+      .tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+      @media (max-width:680px){ .tiles{ grid-template-columns:repeat(2,1fr); } }
+      .tile { background:var(--card2); border:1px solid var(--line); border-radius:10px; padding:13px; }
+      .tile .v { font-size:22px; font-weight:600; }
+      .tile .l { font-size:12px; color:var(--mut); margin-top:2px; }
+      .tile.big .v { color:var(--accent); }
+
+      .section-title { font-size:13px; color:var(--mut); text-transform:uppercase; letter-spacing:.04em; margin:22px 0 10px; }
+      .pill { font-size:11px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); }
+      .ok{color:var(--ok)} .warn{color:var(--warn)} .err{color:var(--err)} .mut{color:var(--mut)}
+      table { width:100%; border-collapse:collapse; font-size:13px; }
+      th,td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); }
+      th { color:var(--mut); font-weight:500; }
+      .notice { background:#2a2410; border:1px solid #5b4a18; color:#e8cf8a; padding:10px 13px; border-radius:9px; font-size:13px; margin-bottom:16px; }
+      .empty { color:var(--mut); padding:40px; text-align:center; }
+      .spark { width:100%; height:54px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🧵 Administration</h1>
+      <nav>
+        <a href="/">Opérations</a>
+        <a href="/admin.html" class="active">Administration</a>
+        <a href="/analytics.html">Analytics</a>
+        <a href="/keys.html" data-admin>Clés API</a>
+        <a href="/users.html" data-admin>Utilisateurs</a>
+      </nav>
+      <a href="/auth/threads"><button class="primary sm">+ Connecter un compte</button></a>
+      <div class="api-key-bar" id="userChip"></div>
+    </header>
+
+    <main>
+      <div class="overview" id="overview"></div>
+
+      <div class="layout">
+        <div class="acct-list" id="acctList"></div>
+        <div class="panel" id="panel">
+          <div class="empty">Sélectionne un compte pour voir ses statistiques.</div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/session.js"></script>
+    <script src="/admin.js"></script>
+  </body>
+</html>

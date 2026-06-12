@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Connexion — Threads Manager</title>
+    <style>
+      :root { --bg:#0b0d12; --card:#161a23; --card2:#0e1219; --line:#252b38; --fg:#e6e9ef; --mut:#8b95a7; --accent:#5b8cff; --err:#e0566f; }
+      * { box-sizing:border-box; }
+      body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; font-family:system-ui,sans-serif; background:var(--bg); color:var(--fg); }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:28px; width:340px; }
+      h1 { font-size:18px; margin:0 0 4px; }
+      p.sub { color:var(--mut); font-size:13px; margin:0 0 18px; }
+      label { display:block; font-size:12px; color:var(--mut); margin:12px 0 4px; }
+      input { width:100%; padding:10px 12px; background:var(--card2); border:1px solid var(--line); border-radius:8px; color:var(--fg); font:inherit; }
+      button { width:100%; margin-top:18px; padding:11px; border-radius:8px; border:none; background:var(--accent); color:#fff; font:inherit; cursor:pointer; }
+      button:hover { filter:brightness(1.1); }
+      .msg { color:var(--err); font-size:13px; margin-top:12px; min-height:18px; }
+    </style>
+  </head>
+  <body>
+    <form class="card" id="form">
+      <h1>🧵 Threads Manager</h1>
+      <p class="sub">Connexion à l'espace de gestion</p>
+      <label>Identifiant</label>
+      <input id="u" autocomplete="username" autofocus />
+      <label>Mot de passe</label>
+      <input id="p" type="password" autocomplete="current-password" />
+      <button type="submit">Se connecter</button>
+      <div class="msg" id="msg"></div>
+    </form>
+    <script src="/login.js"></script>
+  </body>
+</html>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Threads Manager — Clés API</title>
+    <style>
+      :root { --bg:#0b0d12; --card:#161a23; --card2:#0e1219; --line:#252b38; --fg:#e6e9ef; --mut:#8b95a7; --accent:#5b8cff; --ok:#3fb37f; --warn:#d7b15b; --err:#e0566f; }
+      * { box-sizing:border-box; }
+      body { margin:0; font-family:system-ui,sans-serif; background:var(--bg); color:var(--fg); }
+      a { color:var(--accent); text-decoration:none; }
+      header { padding:14px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+      header h1 { font-size:17px; margin:0; }
+      nav a { font-size:13px; color:var(--mut); margin-right:14px; }
+      nav a.active { color:var(--fg); }
+      .api-key-bar { margin-left:auto; display:flex; gap:8px; align-items:center; }
+      .api-key-bar input { width:240px; padding:8px 10px; background:var(--card2); border:1px solid var(--line); border-radius:8px; color:var(--fg); }
+      main { max-width:900px; margin:0 auto; padding:24px; display:grid; gap:20px; }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+      .card h2 { margin:0 0 12px; font-size:15px; }
+      label { display:block; font-size:12px; color:var(--mut); margin:10px 0 4px; }
+      input { width:100%; padding:9px 11px; background:var(--card2); border:1px solid var(--line); border-radius:8px; color:var(--fg); font:inherit; }
+      button { cursor:pointer; padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:#1d2330; color:var(--fg); font:inherit; }
+      button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+      button.danger { color:var(--err); border-color:#5b2330; }
+      button.sm { padding:4px 9px; font-size:12px; }
+      button:hover { filter:brightness(1.1); }
+      .row { display:flex; gap:10px; align-items:end; }
+      .row > input { flex:1; }
+      table { width:100%; border-collapse:collapse; font-size:13px; }
+      th,td { text-align:left; padding:8px; border-bottom:1px solid var(--line); }
+      th { color:var(--mut); font-weight:500; }
+      code { background:var(--card2); padding:1px 6px; border-radius:5px; }
+      .pill { font-size:11px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); }
+      .ok { color:var(--ok); } .mut { color:var(--mut); }
+      .reveal { background:#10261b; border:1px solid #1f5b3e; border-radius:10px; padding:14px; display:none; }
+      .reveal .k { display:flex; gap:8px; align-items:center; margin-top:8px; }
+      .reveal code { font-size:14px; flex:1; word-break:break-all; }
+      .hint { font-size:12px; color:var(--mut); margin-top:6px; }
+      .empty { color:var(--mut); padding:24px; text-align:center; }
+      .toast { position:fixed; bottom:20px; right:20px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 16px; }
+    </style>
+  </head>
+  <body data-require-admin>
+    <header>
+      <h1>🔑 Clés API</h1>
+      <nav>
+        <a href="/">Opérations</a>
+        <a href="/admin.html">Administration</a>
+        <a href="/analytics.html">Analytics</a>
+        <a href="/keys.html" class="active" data-admin>Clés API</a>
+        <a href="/users.html" data-admin>Utilisateurs</a>
+      </nav>
+      <div class="api-key-bar" id="userChip"></div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Créer une clé</h2>
+        <div class="row">
+          <input id="newName" placeholder="Nom de la clé (ex: n8n, script de sauvegarde…)" />
+          <button class="primary" onclick="createKey()">+ Générer</button>
+        </div>
+        <p class="hint">Donne un nom par usage : tu pourras révoquer une clé sans impacter les autres.</p>
+
+        <div class="reveal" id="reveal">
+          <b class="ok">✅ Nouvelle clé créée — copie-la maintenant, elle ne sera plus affichée :</b>
+          <div class="k">
+            <code id="revealKey"></code>
+            <button class="sm" onclick="copyKey()">Copier</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Clés existantes <button class="sm" style="float:right" onclick="loadKeys()">↻</button></h2>
+        <table id="keysTable">
+          <thead><tr><th>Nom</th><th>Préfixe</th><th>Créée</th><th>Dernier usage</th><th>État</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </section>
+    </main>
+
+    <script src="/session.js"></script>
+    <script src="/keys.js"></script>
+  </body>
+</html>

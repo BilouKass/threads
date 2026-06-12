@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Threads Manager</title>
+    <style>
+      :root { --bg:#0b0d12; --card:#161a23; --line:#252b38; --fg:#e6e9ef; --mut:#8b95a7; --accent:#5b8cff; --ok:#3fb37f; --err:#e0566f; }
+      * { box-sizing: border-box; }
+      body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:var(--fg); }
+      header { padding:16px 24px; border-bottom:1px solid var(--line); display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+      header h1 { font-size:18px; margin:0; }
+      main { max-width:1000px; margin:0 auto; padding:24px; display:grid; gap:20px; }
+      .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:18px; }
+      .card h2 { margin:0 0 12px; font-size:15px; }
+      label { display:block; font-size:12px; color:var(--mut); margin:10px 0 4px; }
+      input, select, textarea, button { font:inherit; }
+      input, select, textarea { width:100%; padding:9px 11px; background:#0e1219; border:1px solid var(--line); border-radius:8px; color:var(--fg); }
+      textarea { min-height:80px; resize:vertical; }
+      button { cursor:pointer; padding:9px 14px; border-radius:8px; border:1px solid var(--line); background:#1d2330; color:var(--fg); }
+      button.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+      button:hover { filter:brightness(1.1); }
+      .row { display:flex; gap:10px; flex-wrap:wrap; align-items:end; }
+      .row > * { flex:1; min-width:140px; }
+      table { width:100%; border-collapse:collapse; font-size:13px; }
+      th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+      th { color:var(--mut); font-weight:500; }
+      .pill { font-size:11px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); }
+      .PENDING { color:#d7b15b; } .PROCESSING { color:var(--accent); }
+      .PUBLISHED { color:var(--ok); } .FAILED { color:var(--err); } .CANCELLED { color:var(--mut); }
+      .mut { color:var(--mut); font-size:12px; }
+      .api-key-bar { margin-left:auto; display:flex; gap:8px; align-items:center; }
+      .api-key-bar input { width:260px; }
+      code { background:#0e1219; padding:1px 5px; border-radius:4px; }
+      .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+      @media (max-width:760px){ .grid2{ grid-template-columns:1fr; } }
+      .toast { position:fixed; bottom:20px; right:20px; background:var(--card); border:1px solid var(--line); border-radius:8px; padding:12px 16px; max-width:340px; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>🧵 Threads Manager</h1>
+      <nav style="display:flex;gap:14px;font-size:13px">
+        <a href="/" style="color:var(--fg);text-decoration:none">Opérations</a>
+        <a href="/admin.html" style="color:var(--mut);text-decoration:none">Administration</a>
+        <a href="/analytics.html" style="color:var(--mut);text-decoration:none">Analytics</a>
+        <a href="/keys.html" data-admin style="color:var(--mut);text-decoration:none">Clés API</a>
+        <a href="/users.html" data-admin style="color:var(--mut);text-decoration:none">Utilisateurs</a>
+      </nav>
+      <a href="/auth/threads"><button class="primary">+ Connecter un compte Threads</button></a>
+      <div class="api-key-bar" id="userChip"></div>
+    </header>
+
+    <main>
+      <section class="card">
+        <h2>Comptes connectés</h2>
+        <table id="accountsTable"><thead><tr>
+          <th>Compte</th><th>User ID</th><th>Token expire</th><th>État</th><th></th>
+        </tr></thead><tbody></tbody></table>
+      </section>
+
+      <div class="grid2">
+        <section class="card">
+          <h2>Planifier un post</h2>
+          <label>Compte</label>
+          <select id="postAccount"></select>
+          <label>Texte <span class="mut">— entoure un passage de <code>||…||</code> pour un spoiler</span></label>
+          <textarea id="postText" placeholder="Quoi de neuf ? Le secret est ||caché|| ici."></textarea>
+          <label>Médias — images et/ou vidéos (carrousel si plusieurs)</label>
+          <input id="postImages" type="file" accept="image/*,video/*" multiple />
+          <label style="display:flex;align-items:center;gap:8px;margin-top:8px">
+            <input id="postSpoilerMedia" type="checkbox" style="width:auto" /> Flouter le média (spoiler)
+          </label>
+          <details style="margin-top:6px">
+            <summary class="mut" style="cursor:pointer;font-size:12px">Sondage (post texte uniquement)</summary>
+            <div class="row" style="margin-top:6px">
+              <input id="pollA" placeholder="Option 1 (max 25)" maxlength="25" />
+              <input id="pollB" placeholder="Option 2 (max 25)" maxlength="25" />
+            </div>
+            <div class="row" style="margin-top:6px">
+              <input id="pollC" placeholder="Option 3 (optionnel)" maxlength="25" />
+              <input id="pollD" placeholder="Option 4 (optionnel)" maxlength="25" />
+            </div>
+          </details>
+          <div class="row">
+            <div>
+              <label>Date de publication (vide = maintenant)</label>
+              <input id="postWhen" type="datetime-local" />
+            </div>
+            <div>
+              <label>Répondre à (media id, optionnel)</label>
+              <input id="postReplyTo" placeholder="ex: 178...." />
+            </div>
+          </div>
+          <br />
+          <button class="primary" onclick="submitPost()">Planifier</button>
+          <button onclick="submitPost(true)" title="Place le post au prochain créneau libre">+ File d'attente</button>
+        </section>
+
+        <section class="card">
+          <h2>Répondre à un post / commentaire</h2>
+          <label>Compte</label>
+          <select id="actAccount"></select>
+          <label>Cible (media id du post/commentaire)</label>
+          <input id="actTarget" placeholder="ex: 178...." />
+          <label>Texte de la réponse</label>
+          <textarea id="actText" placeholder="Votre réponse..."></textarea>
+          <br />
+          <button class="primary" onclick="submitAction()">Envoyer la réponse</button>
+        </section>
+      </div>
+
+      <div class="grid2">
+        <section class="card">
+          <h2>Enchaînement (thread)</h2>
+          <label>Compte</label>
+          <select id="chainAccount"></select>
+          <label>Un post par bloc, séparés par une ligne vide</label>
+          <textarea id="chainText" style="min-height:120px" placeholder="Premier post du thread&#10;&#10;Deuxième post (réponse au 1er)&#10;&#10;Troisième post..."></textarea>
+          <label>Date de départ (vide = maintenant)</label>
+          <input id="chainWhen" type="datetime-local" />
+          <br /><br />
+          <button class="primary" onclick="submitChain()">Publier l'enchaînement</button>
+        </section>
+
+        <section class="card">
+          <h2>File d'attente — créneaux récurrents</h2>
+          <label>Compte</label>
+          <select id="slotAccount" onchange="loadSlots()"></select>
+          <div class="row">
+            <div>
+              <label>Jour</label>
+              <select id="slotDay">
+                <option value="1">Lundi</option><option value="2">Mardi</option>
+                <option value="3">Mercredi</option><option value="4">Jeudi</option>
+                <option value="5">Vendredi</option><option value="6">Samedi</option>
+                <option value="0">Dimanche</option>
+              </select>
+            </div>
+            <div>
+              <label>Heure</label>
+              <input id="slotTime" type="time" value="09:00" />
+            </div>
+            <div style="display:flex;align-items:end">
+              <button onclick="addSlot()">+ Ajouter</button>
+            </div>
+          </div>
+          <table id="slotsTable" style="margin-top:10px"><tbody></tbody></table>
+        </section>
+      </div>
+
+      <section class="card">
+        <h2>Posts planifiés <button onclick="loadPosts()" style="float:right">↻</button></h2>
+        <table id="postsTable"><thead><tr>
+          <th>Quand</th><th>Type</th><th>Texte</th><th>Statut</th><th>Erreur</th><th></th>
+        </tr></thead><tbody></tbody></table>
+      </section>
+
+      <section class="card">
+        <h2>Actions <button onclick="loadActions()" style="float:right">↻</button></h2>
+        <table id="actionsTable"><thead><tr>
+          <th>Quand</th><th>Type</th><th>Cible</th><th>Statut</th><th>Erreur</th>
+        </tr></thead><tbody></tbody></table>
+      </section>
+    </main>
+
+    <script src="/session.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
